@@ -24,9 +24,14 @@ export default function Header({ currentView, searchQuery, setSearchQuery, filte
     <>
       {/* Mobile Topbar */}
       <div id="mobile-topbar" className="glass-panel">
-        <div className="mobile-logo font-['Noto_Sans_Georgian']">
-          <div className="mobile-logo-icon">TC</div>
-          Connect
+        <div className="mobile-logo font-['Noto_Sans_Georgian'] flex items-center gap-2">
+          {/* აქ ვწერთ პირდაპირ მისამართს, რადგან ფაილი public საქაღალდეშია */}
+          <img 
+            src="/logo.png" 
+            alt="Logo" 
+           style={{ width: '75px', height: '75px', objectFit: 'contain' }} 
+          />
+          <span>Teacher Connect</span>
         </div>
         <button
           className={`burger ${sidebarOpen ? 'active' : ''}`}

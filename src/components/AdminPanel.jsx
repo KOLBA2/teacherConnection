@@ -25,7 +25,7 @@ const FIELD_LABELS = {
   'თარიღი': { label: 'თარიღი', color: '#71717a' },
 };
 
-export default function AdminPanel({ currentUser, onClose }) {
+export default function AdminPanel({ currentUser, onClose, onDeleteItem }) {
   const [reports, setReports] = useState([]);
   const [selected, setSelected] = useState(null);
 
@@ -55,6 +55,23 @@ export default function AdminPanel({ currentUser, onClose }) {
     setReports([]);
     localStorage.setItem('tc_reports', JSON.stringify([]));
     setSelected(null);
+  };
+
+  // ახალი ფუნქცია კონტენტის წასაშლელად
+  const handleDeleteContent = (report) => {
+    if (!window.confirm('დარწმუნებული ხართ, რომ გსურთ ამ კონტენტის (პოსტის/კომენტარის) სამუდამოდ წაშლა?')) return;
+    
+    // აქ უნდა გამოიძახოთ მთავარი კომპონენტიდან გადმოცემული წაშლის ლოგიკა
+    if (onDeleteItem) {
+      const parsed = parseBody(report.body);
+      const type = parsed['შეტყობინების ტიპი']; // 'პოსტი' ან 'კომენტარი'
+      onDeleteItem(type, report);
+    } else {
+      alert('გთხოვთ დაამატოთ onDeleteItem ლოგიკა მთავარ კომპონენტში.');
+    }
+
+    // კონტენტის წაშლის შემდეგ რეპორტიც უნდა წაიშალოს სიიდან
+    handleDismiss(report.id);
   };
 
   if (!isAdmin) return null;
@@ -227,13 +244,23 @@ export default function AdminPanel({ currentUser, onClose }) {
                     )}
                   </div>
 
-                  {/* Dismiss */}
-                  <button
-                    onClick={() => handleDismiss(selected.id)}
-                    className="mt-1 w-full py-2.5 rounded-xl border border-emerald-500/20 hover:border-emerald-500/40 bg-emerald-500/8 hover:bg-emerald-500/15 text-emerald-400 text-[13px] font-semibold cursor-pointer transition-all flex items-center justify-center gap-2"
-                  >
-                    <i className="fas fa-check text-[11px]"></i> განხილულია — წაშლა
-                  </button>
+                  {/* Action Buttons */}
+                  <div className="mt-1 flex gap-2 w-full">
+                    <button
+                      onClick={() => handleDismiss(selected.id)}
+                      className="flex-1 py-2.5 rounded-xl border border-emerald-500/20 hover:border-emerald-500/40 bg-emerald-500/8 hover:bg-emerald-500/15 text-emerald-400 text-[13px] font-semibold cursor-pointer transition-all flex items-center justify-center gap-2"
+                    >
+                      <i className="fas fa-check text-[11px]"></i> დატოვება
+                    </button>
+                    
+                    <button
+                      onClick={() => handleDeleteContent(selected)}
+                      className="flex-1 py-2.5 rounded-xl border border-red-500/20 hover:border-red-500/40 bg-red-500/8 hover:bg-red-500/15 text-red-400 text-[13px] font-semibold cursor-pointer transition-all flex items-center justify-center gap-2"
+                    >
+                      <i className="fas fa-trash text-[11px]"></i> წაშლა
+                    </button>
+                  </div>
+
                 </div>
               );
             })()}

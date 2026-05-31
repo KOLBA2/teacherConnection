@@ -16,7 +16,6 @@ export default function Sidebar({
   const [reportCount, setReportCount] = useState(0);
   const isAdmin = currentUser?.email === ADMIN_EMAIL;
 
-  // Poll localStorage for new reports badge count
   useEffect(() => {
     if (!isAdmin) return;
     const refresh = () => {
@@ -38,12 +37,16 @@ export default function Sidebar({
       <aside id="sidebar" className={`glass-panel border-right border-r border-[#ffffff10] ${sidebarOpen ? 'open' : ''}`}>
         {/* Logo — clickable → goes home */}
         <button
-          className="sidebar-logo w-full text-left bg-transparent border-none cursor-pointer hover:opacity-80 transition-opacity p-0"
+          className="sidebar-logo w-full text-left bg-transparent border-none cursor-pointer hover:opacity-80 transition-opacity p-0 flex items-center gap-2"
           onClick={() => { setFeedMode('all'); closeSidebar(); }}
           title="მთავარ გვერდზე დაბრუნება"
         >
-          <div className="sidebar-logo-icon">TC</div>
-          <span className="font-bold text-[17px] text-white tracking-tight font-['Noto_Sans_Georgian']">Connect</span>
+         <img 
+           src="/logo.png" 
+           alt="Logo" 
+           style={{ width: '75px', height: '75px', objectFit: 'contain' }} 
+          />         
+        <span className="font-bold text-[17px] text-white tracking-tight font-['Noto_Sans_Georgian']">Teacher Connect</span>
         </button>
 
         {/* Navigation Items */}
@@ -103,7 +106,6 @@ export default function Sidebar({
             <i className="fas fa-user"></i> პროფილი
           </button>
 
-          {/* Admin Reports Button — only visible for admin */}
           {isAdmin && (
             <button
               onClick={() => { onOpenAdmin(); closeSidebar(); }}
@@ -113,9 +115,7 @@ export default function Sidebar({
               <i className="fas fa-shield-alt" style={{ color: reportCount > 0 ? '#f87171' : '#818cf8' }}></i>
               ადმინ პანელი
               {reportCount > 0 && (
-                <span
-                  className="absolute right-3 top-1/2 -translate-y-1/2 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1 shadow-md shadow-red-900/40 animate-pulse"
-                >
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1 shadow-md shadow-red-900/40 animate-pulse">
                   {reportCount}
                 </span>
               )}
@@ -132,7 +132,7 @@ export default function Sidebar({
           </button>
         </nav>
 
-        {/* Sidebar Footer — Clickable User Card → opens profile */}
+        {/* Sidebar Footer */}
         {currentUser && (
           <button
             className="sidebar-user w-full bg-transparent border-none cursor-pointer group"

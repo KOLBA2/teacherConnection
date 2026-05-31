@@ -1,8 +1,12 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 export default function Auth({ onLogin, onRegister, addToast }) {
   const [activeTab, setActiveTab] = useState('login'); // 'login' | 'register'
+  const [showTutorialHelp, setShowTutorialHelp] = useState(false); // საინფორმაციო შეტყობინების სტეიტი
   
+  // Ref იმისთვის, რომ მივხვდეთ სად დააკლიკა მომხმარებელმა
+  const helpContainerRef = useRef(null);
+
   // Login Form States
   const [logUser, setLogUser] = useState('');
   const [logPass, setLogPass] = useState('');
@@ -23,6 +27,22 @@ export default function Auth({ onLogin, onRegister, addToast }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
+
+  // ეფექტი, რომელიც უსმენს გარეთ დაწკაპუნებას
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (helpContainerRef.current && !helpContainerRef.current.contains(event.target)) {
+        setShowTutorialHelp(false);
+      }
+    }
+    
+    // ვამატებთ ივენთს ეკრანზე
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      // ვასუფთავებთ ივენთს კომპონენტის წაშლისას
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleLoginSubmit = (e) => {
     e.preventDefault();
@@ -167,16 +187,40 @@ export default function Auth({ onLogin, onRegister, addToast }) {
         </div>
 
         {/* Right Panel */}
-        <div className="flex-1 p-6 md:p-10 bg-[rgba(9,9,11,0.5)]">
+        <div className="flex-1 p-6 md:p-10 bg-[rgba(9,9,11,0.5)] relative">
+          
+          {/* Tutorial / Registration Help Button (კონტეინერი ref-ით) */}
+          <div className="absolute top-4 right-4 z-20" ref={helpContainerRef}>
+            <button
+              type="button"
+              onClick={() => setShowTutorialHelp(!showTutorialHelp)}
+              className="flex items-center justify-center w-8 h-8 rounded-full bg-[#27272a] border border-[#3f3f46] text-[#a1a1aa] hover:text-white hover:border-[#52525b] transition-all cursor-pointer"
+              title="ვერ რეგისტრირდებით?"
+            >
+              <i className="fas fa-info-circle text-base"></i>
+            </button>
+            
+            {showTutorialHelp && (
+              <div className="absolute right-0 mt-2 p-4 bg-[#18181b] border border-[#27272a] rounded-xl shadow-2xl w-64 text-xs text-[#a1a1aa] leading-relaxed z-50 font-['Noto_Sans_Georgian']">
+                <p className="font-semibold text-white mb-1.5 flex items-center gap-1.5">
+                  <i className="fas fa-tools text-[#6366f1]"></i> რეგისტრაციის დახმარება
+                </p>
+                ვერ ახერხებთ რეგისტრაციას? გაცნობებთ, რომ ჩვენ აქტიურად ვმუშაობთ ამ ფუნქციონალის გაუმჯობესებაზე და ის მალე სრულად ხელმისაწვდომი იქნება!
+              </div>
+            )}
+          </div>
+
           {/* Tabs */}
           <div className="flex gap-6 border-b border-[#27272a] mb-7">
             <button
+              type="button"
               onClick={() => setActiveTab('login')}
               className={`auth-tab ${activeTab === 'login' ? 'active' : 'inactive'}`}
             >
               შესვლა
             </button>
             <button
+              type="button"
               onClick={() => setActiveTab('register')}
               className={`auth-tab ${activeTab === 'register' ? 'active' : 'inactive'}`}
             >
@@ -319,8 +363,8 @@ export default function Auth({ onLogin, onRegister, addToast }) {
                     {cameraActive && (
                       <video
                         ref={videoRef}
-                        autoplay
-                        playsinline
+                        autoPlay
+                        playsInline
                         className="w-full h-32 object-cover rounded-lg border border-[#27272a] mb-2"
                       />
                     )}
