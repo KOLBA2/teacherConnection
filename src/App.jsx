@@ -180,6 +180,23 @@ export default function App() {
   const [editPostData, setEditPostData] = useState(null);
   const [paymentPostData, setPaymentPostData] = useState(null);
   const [toasts, setToasts] = useState([]);
+  const [reports, setReports] = useState(() => {
+    return JSON.parse(localStorage.getItem('tc_reports') || '[]');
+  });
+  const [highlightedPostId, setHighlightedPostId] = useState(null);
+
+  const refreshReports = () => {
+    const stored = JSON.parse(localStorage.getItem('tc_reports') || '[]');
+    if (JSON.stringify(stored) !== JSON.stringify(reports)) {
+      setReports(stored);
+    }
+  };
+
+  useEffect(() => {
+    refreshReports();
+    const interval = setInterval(refreshReports, 2000);
+    return () => clearInterval(interval);
+  }, [reports]);
 
   // Toast Helper
   const addToast = (message, type = 'success') => {
@@ -393,8 +410,96 @@ export default function App() {
   const handleDeletePost = (postId) => {
     if (window.confirm('დარწმუნებული ხართ, რომ გსურთ პოსტის წაშლა?')) {
       setPosts((prev) => prev.filter((p) => p.id !== postId));
+      
+      // Also clean up reports for this post
+      const storedReports = JSON.parse(localStorage.getItem('tc_reports') || '[]');
+      const updatedReports = storedReports.filter(r => r.targetId !== postId);
+      localStorage.setItem('tc_reports', JSON.stringify(updatedReports));
+      setReports(updatedReports);
+      
       addToast('პოსტი წაიშალა');
     }
+  };
+
+  const handleNavigateToPost = (targetId, targetType) => {
+    let postId = targetId;
+    if (targetType === 'comment') {
+      const parentPost = posts.find(p => p.comments?.some(c => c.id === targetId));
+      if (parentPost) {
+        postId = parentPost.id;
+      }
+    }
+    
+    if (!postId) return;
+    
+    // Close modal, set view, reset filters
+    setActiveModal(null);
+    setCurrentView('all');
+    setFilterLocation('');
+    setFilterSubject('');
+    setSearchQuery('');
+    setHighlightedPostId(postId);
+    
+    // Smooth scroll and highlight
+    setTimeout(() => {
+      const element = document.getElementById(`post-${postId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        element.classList.add('post-card-highlighted');
+        setTimeout(() => {
+          element.classList.remove('post-card-highlighted');
+          setHighlightedPostId(null);
+        }, 3000);
+      }
+    }, 300);
+  };
+
+  const handleDeleteItem = (type, report) => {
+    const targetId = report.targetId;
+    const targetType = report.targetType;
+    
+    if (targetType === 'post' || type === 'პოსტი') {
+      setPosts((prev) => prev.filter((p) => p.id !== targetId));
+      
+      const storedReports = JSON.parse(localStorage.getItem('tc_reports') || '[]');
+      const updatedReports = storedReports.filter(r => r.targetId !== targetId);
+      localStorage.setItem('tc_reports', JSON.stringify(updatedReports));
+      setReports(updatedReports);
+      
+      addToast('პოსტი წაიშალა');
+    } else if (targetType === 'comment' || type === 'კომენტარი') {
+      setPosts((prev) =>
+        prev.map((p) => {
+          if (p.comments?.some((c) => c.id === targetId)) {
+            return { ...p, comments: p.comments.filter((c) => c.id !== targetId) };
+          }
+          return p;
+        })
+      );
+      
+      const storedReports = JSON.parse(localStorage.getItem('tc_reports') || '[]');
+      const updatedReports = storedReports.filter(r => r.targetId !== targetId);
+      localStorage.setItem('tc_reports', JSON.stringify(updatedReports));
+      setReports(updatedReports);
+      
+      addToast('კომენტარი წაიშალა');
+    }
+  };
+
+  const handleResolveReportByPostId = (postId) => {
+    const storedReports = JSON.parse(localStorage.getItem('tc_reports') || '[]');
+    const updatedReports = storedReports.filter(r => r.targetId !== postId);
+    localStorage.setItem('tc_reports', JSON.stringify(updatedReports));
+    setReports(updatedReports);
+    addToast('შეტყობინება მოინიშნა მოგვარებულად ✓');
+  };
+
+  const handleResolveReportByCommentId = (commentId) => {
+    const storedReports = JSON.parse(localStorage.getItem('tc_reports') || '[]');
+    const updatedReports = storedReports.filter(r => r.targetId !== commentId);
+    localStorage.setItem('tc_reports', JSON.stringify(updatedReports));
+    setReports(updatedReports);
+    addToast('შეტყობინება მოინიშნა მოგვარებულად ✓');
   };
 
   const handleUploadAvatar = (base64Image) => {
@@ -491,6 +596,7 @@ export default function App() {
             onLogout={handleLogout}
             sidebarOpen={sidebarOpen}
             closeSidebar={() => setSidebarOpen(false)}
+            reportCount={reports.length}
           />
 
           <div id="main-content">
@@ -559,6 +665,10 @@ export default function App() {
                         currentUser={currentUser}
                         users={users}
                         subscriptions={subscriptions}
+                        reports={reports}
+                        highlightedPostId={highlightedPostId}
+                        onResolveReportByPostId={handleResolveReportByPostId}
+                        onResolveReportByCommentId={handleResolveReportByCommentId}
                         onEditPost={(p) => {
                           setEditPostData(p);
                           setActiveModal('post');
@@ -642,13 +752,12 @@ export default function App() {
       {activeModal === 'admin' && (
         <AdminPanel
           currentUser={currentUser}
-          posts={posts}
-          setPosts={setPosts}
-          onDeletePost={handleDeletePost}
+          onDeleteItem={handleDeleteItem}
+          onNavigateToPost={handleNavigateToPost}
           onClose={() => setActiveModal(null)}
           addToast={addToast}
         />
       )}
     </>
   );
-}
+} 

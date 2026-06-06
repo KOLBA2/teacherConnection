@@ -12,20 +12,9 @@ export default function Sidebar({
   onLogout,
   closeSidebar,
   sidebarOpen,
+  reportCount = 0,
 }) {
-  const [reportCount, setReportCount] = useState(0);
   const isAdmin = currentUser?.email === ADMIN_EMAIL;
-
-  useEffect(() => {
-    if (!isAdmin) return;
-    const refresh = () => {
-      const stored = JSON.parse(localStorage.getItem('tc_reports') || '[]');
-      setReportCount(stored.length);
-    };
-    refresh();
-    const interval = setInterval(refresh, 2000);
-    return () => clearInterval(interval);
-  }, [isAdmin]);
 
   return (
     <>
@@ -37,16 +26,16 @@ export default function Sidebar({
       <aside id="sidebar" className={`glass-panel border-right border-r border-[#ffffff10] ${sidebarOpen ? 'open' : ''}`}>
         {/* Logo — clickable → goes home */}
         <button
-          className="sidebar-logo w-full text-left bg-transparent border-none cursor-pointer hover:opacity-80 transition-opacity p-0 flex items-center gap-2"
+          className="sidebar-logo w-full text-left bg-transparent border-none cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-3"
           onClick={() => { setFeedMode('all'); closeSidebar(); }}
           title="მთავარ გვერდზე დაბრუნება"
         >
-         <img 
-           src="/logo.png" 
-           alt="Logo" 
-           style={{ width: '75px', height: '75px', objectFit: 'contain' }} 
+          <img 
+            src="/logo.png" 
+            alt="Logo" 
+            className="w-10 h-10 object-contain shrink-0" 
           />         
-        <span className="font-bold text-[17px] text-white tracking-tight font-['Noto_Sans_Georgian']">Teacher Connect</span>
+          <span className="font-bold text-[17px] text-white tracking-tight font-['Noto_Sans_Georgian']">Teacher Connect</span>
         </button>
 
         {/* Navigation Items */}

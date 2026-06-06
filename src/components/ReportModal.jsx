@@ -32,6 +32,10 @@ ID: ${targetId}
 მომხმარებელი: ${reporterName || 'Anonymous'}
 თარიღი: ${new Date().toLocaleString('ka-GE')}
       `.trim(),
+      targetId,
+      targetType: type,
+      reason: selectedReason,
+      details: details || '',
     };
 
     // Store report in localStorage for admin panel visibility

@@ -29,7 +29,7 @@ export default function Header({ currentView, searchQuery, setSearchQuery, filte
           <img 
             src="/logo.png" 
             alt="Logo" 
-           style={{ width: '75px', height: '75px', objectFit: 'contain' }} 
+            className="w-8 h-8 object-contain shrink-0"
           />
           <span>Teacher Connect</span>
         </div>

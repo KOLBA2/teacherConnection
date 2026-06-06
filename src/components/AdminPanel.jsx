@@ -25,7 +25,7 @@ const FIELD_LABELS = {
   'თარიღი': { label: 'თარიღი', color: '#71717a' },
 };
 
-export default function AdminPanel({ currentUser, onClose, onDeleteItem }) {
+export default function AdminPanel({ currentUser, onClose, onDeleteItem, onNavigateToPost }) {
   const [reports, setReports] = useState([]);
   const [selected, setSelected] = useState(null);
 
@@ -245,20 +245,33 @@ export default function AdminPanel({ currentUser, onClose, onDeleteItem }) {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="mt-1 flex gap-2 w-full">
+                  <div className="mt-1 flex flex-col gap-2 w-full">
                     <button
-                      onClick={() => handleDismiss(selected.id)}
-                      className="flex-1 py-2.5 rounded-xl border border-emerald-500/20 hover:border-emerald-500/40 bg-emerald-500/8 hover:bg-emerald-500/15 text-emerald-400 text-[13px] font-semibold cursor-pointer transition-all flex items-center justify-center gap-2"
+                      onClick={() => {
+                        const targetId = selected.targetId || parsed['ID'];
+                        const targetType = selected.targetType || (parsed['შეტყობინების ტიპი'] === 'კომენტარი' ? 'comment' : 'post');
+                        onNavigateToPost && onNavigateToPost(targetId, targetType);
+                      }}
+                      className="w-full py-2.5 rounded-xl border border-indigo-500/25 hover:border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-[13px] font-semibold cursor-pointer transition-all flex items-center justify-center gap-2"
                     >
-                      <i className="fas fa-check text-[11px]"></i> დატოვება
+                      <i className="fas fa-external-link-alt text-[11px]"></i> განცხადებაზე გადასვლა (ნახვა)
                     </button>
                     
-                    <button
-                      onClick={() => handleDeleteContent(selected)}
-                      className="flex-1 py-2.5 rounded-xl border border-red-500/20 hover:border-red-500/40 bg-red-500/8 hover:bg-red-500/15 text-red-400 text-[13px] font-semibold cursor-pointer transition-all flex items-center justify-center gap-2"
-                    >
-                      <i className="fas fa-trash text-[11px]"></i> წაშლა
-                    </button>
+                    <div className="flex gap-2 w-full">
+                      <button
+                        onClick={() => handleDismiss(selected.id)}
+                        className="flex-1 py-2.5 rounded-xl border border-emerald-500/20 hover:border-emerald-500/40 bg-emerald-500/8 hover:bg-emerald-500/15 text-emerald-400 text-[13px] font-semibold cursor-pointer transition-all flex items-center justify-center gap-2"
+                      >
+                        <i className="fas fa-check text-[11px]"></i> დატოვება
+                      </button>
+                      
+                      <button
+                        onClick={() => handleDeleteContent(selected)}
+                        className="flex-1 py-2.5 rounded-xl border border-red-500/20 hover:border-red-500/40 bg-red-500/8 hover:bg-red-500/15 text-red-400 text-[13px] font-semibold cursor-pointer transition-all flex items-center justify-center gap-2"
+                      >
+                        <i className="fas fa-trash text-[11px]"></i> წაშლა
+                      </button>
+                    </div>
                   </div>
 
                 </div>

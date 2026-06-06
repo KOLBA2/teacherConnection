@@ -6,6 +6,10 @@ export default function PostCard({
   currentUser,
   users,
   subscriptions = [],
+  reports = [],
+  highlightedPostId = null,
+  onResolveReportByPostId,
+  onResolveReportByCommentId,
   onEditPost,
   onDeletePost,
   onRatePost,
@@ -25,6 +29,9 @@ export default function PostCard({
   const isOwner = currentUser?.id === post.userId;
   const isSaved = (currentUser?.saved || []).includes(post.id);
 
+  const isAdmin = currentUser?.email === 'gkolbaia2008@gmail.com';
+  const postReports = reports.filter(r => r.targetId === post.id && r.targetType === 'post');
+
   // Compute 5-star rating data
   const postRatings = post.ratings || {};
   const ratingKeys = Object.keys(postRatings);
@@ -32,6 +39,15 @@ export default function PostCard({
   const ratingSum = ratingKeys.reduce((sum, key) => sum + postRatings[key], 0);
   const avgRating = ratingCount > 0 ? (ratingSum / ratingCount).toFixed(1) : '0.0';
   const currentUserRating = postRatings[currentUser?.id] || 0;
+
+  React.useEffect(() => {
+    if (post.id === highlightedPostId) {
+      const hasCommentReports = reports.some(r => r.targetType === 'comment' && post.comments?.some(c => c.id === r.targetId));
+      if (hasCommentReports) {
+        setShowComments(true);
+      }
+    }
+  }, [highlightedPostId, post.id, reports]);
 
   // Determine if payment button should be visible
   const showPaymentBtn = author.role === 'teacher' && currentUser && currentUser.id !== post.userId;
@@ -46,7 +62,43 @@ export default function PostCard({
 
   return (
     <>
-      <div className="glass-panel post-card p-5 rounded-2xl border border-[#ffffff08] transition-all duration-200">
+      <div id={`post-${post.id}`} className="glass-panel post-card p-5 rounded-2xl border border-[#ffffff08] transition-all duration-200">
+        
+        {/* Admin Action Banner */}
+        {isAdmin && postReports.length > 0 && (
+          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3.5 mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 font-['Noto_Sans_Georgian']">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 text-red-400 font-bold text-xs uppercase tracking-wider mb-1">
+                <i className="fas fa-exclamation-triangle text-xs animate-pulse"></i> რეპორტირებული განცხადება ({postReports.length})
+              </div>
+              <div className="text-[13px] text-red-300">
+                <span className="font-semibold text-white">მიზეზი:</span>{' '}
+                {postReports.map((r) => r.reason || 'დაზუსტების გარეშე').join(', ')}
+              </div>
+              {postReports.some((r) => r.details) && (
+                <div className="text-[11px] text-[#a1a1aa] mt-1">
+                  <span className="font-semibold text-[#71717a]">დეტალები:</span>{' '}
+                  {postReports.map((r) => r.details).filter(Boolean).join(' | ')}
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2 shrink-0 w-full sm:w-auto mt-2 sm:mt-0">
+              <button
+                onClick={() => onResolveReportByPostId && onResolveReportByPostId(post.id)}
+                className="flex-1 sm:flex-none px-3.5 py-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 text-emerald-400 font-semibold text-xs cursor-pointer transition-all flex items-center justify-center gap-1.5"
+              >
+                <i className="fas fa-check text-[10px]"></i> დატოვება
+              </button>
+              <button
+                onClick={() => onDeletePost && onDeletePost(post.id)}
+                className="flex-1 sm:flex-none px-3.5 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/25 text-red-400 font-semibold text-xs cursor-pointer transition-all flex items-center justify-center gap-1.5"
+              >
+                <i className="fas fa-trash text-[10px]"></i> წაშლა
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Card Header */}
         <div className="flex justify-between items-start mb-4">
           <div className="flex gap-3 items-center">
@@ -212,6 +264,7 @@ export default function PostCard({
                 post.comments.map((comment) => {
                   const commentUser = users.find(u => u.id === comment.userId) || { fullName: 'უცნობი', avatar: '' };
                   const isCommentOwner = comment.userId === currentUser?.id;
+                  const isCommentReported = reports.some(r => r.targetId === comment.id && r.targetType === 'comment');
 
                   return (
                     <div key={comment.id} className="flex gap-2 text-left">
@@ -220,14 +273,23 @@ export default function PostCard({
                         alt={commentUser.fullName}
                         className="w-7 h-7 rounded-full object-cover shrink-0 mt-0.5"
                       />
-                      <div className="bg-black/35 border border-[#27272a]/60 rounded-xl p-2 flex-1">
+                      <div className={`rounded-xl p-2 flex-1 border transition-colors ${
+                        isCommentReported 
+                          ? 'bg-red-500/10 border-red-500/25' 
+                          : 'bg-black/35 border-[#27272a]/60'
+                      }`}>
                         <div className="flex justify-between items-center mb-1">
                           <span className="text-[12px] font-semibold text-[#818cf8] font-['Noto_Sans_Georgian']">
                             {commentUser.fullName}
+                            {isCommentReported && (
+                              <span className="text-red-400 text-[10px] ml-1.5 font-bold uppercase tracking-wider">
+                                ⚠️ შეტყობინებული
+                              </span>
+                            )}
                           </span>
                           <div className="flex items-center gap-1.5">
-                            {/* Report comment button — for non-owners */}
-                            {currentUser && !isCommentOwner && (
+                            {/* Report comment button — for non-owners, non-admins */}
+                            {currentUser && !isCommentOwner && !isAdmin && (
                               <button
                                 onClick={() => setReportTarget({ type: 'comment', id: comment.id, text: comment.text })}
                                 className="bg-transparent border-none cursor-pointer text-[#52525b] hover:text-[#fb923c] text-[10px] p-0.5 transition-colors"
@@ -236,10 +298,31 @@ export default function PostCard({
                                 <i className="fas fa-flag"></i>
                               </button>
                             )}
-                            {/* Delete own comment */}
-                            {isCommentOwner && (
+                            
+                            {/* Admin Resolve / Keep comment */}
+                            {isAdmin && isCommentReported && (
                               <button
-                                onClick={() => onDeleteComment(post.id, comment.id)}
+                                onClick={() => onResolveReportByCommentId && onResolveReportByCommentId(comment.id)}
+                                className="bg-transparent border-none cursor-pointer text-emerald-400 hover:text-emerald-300 text-[10px] p-0.5 transition-colors"
+                                title="დატოვება (რეპორტის წაშლა)"
+                              >
+                                <i className="fas fa-check"></i>
+                              </button>
+                            )}
+
+                            {/* Delete comment (own or admin override) */}
+                            {(isCommentOwner || isAdmin) && (
+                              <button
+                                onClick={() => {
+                                  if (isAdmin) {
+                                    if (window.confirm('დარწმუნებული ხართ, რომ გსურთ ამ კომენტარის წაშლა?')) {
+                                      onDeleteComment(post.id, comment.id);
+                                      onResolveReportByCommentId && onResolveReportByCommentId(comment.id);
+                                    }
+                                  } else {
+                                    onDeleteComment(post.id, comment.id);
+                                  }
+                                }}
                                 className="bg-transparent border-none cursor-pointer text-[#71717a] hover:text-[#f87171] text-[10px] p-0.5 transition-colors"
                                 title="კომენტარის წაშლა"
                               >
